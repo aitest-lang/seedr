@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEGA Torrent Downloader</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Torrent to MEGA Downloader</h1>
+        
+        <div class="input-section">
+            <input type="text" id="magnet-input" placeholder="Enter magnet link or torrent URL">
+            <button id="download-btn">Start Download</button>
+        </div>
+        
+        <div class="status-section">
+            <h2>Active Downloads</h2>
+            <div id="active-downloads"></div>
+        </div>
+        
+        <div class="files-section">
+            <h2>Your Files on MEGA</h2>
+            <button id="refresh-files">Refresh List</button>
+            <div id="file-list"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
