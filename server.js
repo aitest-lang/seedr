@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const WebTorrent = require('webtorrent');
-const Mega = require('megajs').default; // Changed import
+const { Mega } = require('megajs'); // Correct import syntax
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
@@ -16,9 +16,10 @@ const TEMP_DIR = path.join(__dirname, 'temp');
 if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR);
 
 // MEGA Storage Setup
-const mega = Mega({
+const mega = new Mega({
     email: process.env.MEGA_EMAIL,
-    password: process.env.MEGA_PASSWORD
+    password: process.env.MEGA_PASSWORD,
+    autologin: false
 });
 
 // Active downloads tracker
@@ -50,15 +51,19 @@ app.post('/download', async (req, res) => {
             try {
                 activeDownloads.set(downloadId, { status: 'uploading', name: torrent.name });
                 
-                await mega.ready;
-                const root = mega.root;
+                await mega.login();
+                const root = await mega.root;
                 
                 for (const file of torrent.files) {
                     const filePath = path.join(TEMP_DIR, file.name);
                     const uploadStream = fs.createReadStream(filePath);
                     
                     await new Promise((resolve, reject) => {
-                        root.upload(file.name, uploadStream, (err, uploadedFile) => {
+                        root.upload({
+                            name: file.name,
+                            size: file.length,
+                            stream: uploadStream
+                        }, (err, uploadedFile) => {
                             if (err) return reject(err);
                             console.log('Uploaded:', uploadedFile.name);
                             fs.unlinkSync(filePath);
@@ -87,7 +92,8 @@ app.post('/download', async (req, res) => {
 
 app.get('/files', async (req, res) => {
     try {
-        await mega.ready;
+        await mega.login();
+        const root = await mega.root;
         const files = [];
         
         // Recursive function to get all files
@@ -106,7 +112,7 @@ app.get('/files', async (req, res) => {
             });
         }
         
-        traverse(mega.root);
+        traverse(root);
         
         res.json(files.sort((a,b) => b.timestamp - a.timestamp));
     } catch (err) {
@@ -123,7 +129,7 @@ app.get('/status/:id', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    mega.ready.then(() => {
+    mega.login().then(() => {
         console.log('Connected to MEGA storage');
     }).catch(err => {
         console.error('MEGA login failed:', err);
